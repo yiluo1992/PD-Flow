@@ -62,7 +62,37 @@ IF (BUILD_RT_VISUALIZATION)
 			${CUDA_LIBRARIES}
 			${OpenNI_lib}
 			pdflow_cudalib)
-ENDIF (BUILD_RT_VISUALIZATION)			
+ENDIF (BUILD_RT_VISUALIZATION)		
+
+#Build real-time scene flow with visualization
+IF (BUILD_RT_VISUALIZATION)
+	FIND_PACKAGE(MRPT REQUIRED base gui opengl)
+
+	IF (WIN32)
+		INCLUDE_DIRECTORIES($ENV{OPENNI2_INCLUDE})
+		LINK_DIRECTORIES($ENV{OPENNI2_LIB})
+		SET(OpenNI_lib "$ENV{OPENNI2_LIB}/OpenNI2.lib")
+	ENDIF (WIN32)
+	
+	IF (UNIX)
+		SET(OpenNI2_libdir "/usr/lib")
+		INCLUDE_DIRECTORIES("/usr/include/openni2")
+		LINK_DIRECTORIES(${OpenNI2_libdir})
+		SET(OpenNI_lib "${OpenNI2_libdir}/libOpenNI2.so")
+	ENDIF (UNIX)
+
+	ADD_EXECUTABLE(Scene-Flow-Visualization-withoutdevice  
+		main_scene_flow_visualization_withoutdevice.cpp
+		scene_flow_visualization.cpp
+		scene_flow_visualization.h
+		legend_pdflow.xpm)
+		
+	TARGET_LINK_LIBRARIES(Scene-Flow-Visualization
+			${MRPT_LIBS}
+			${CUDA_LIBRARIES}
+			${OpenNI_lib}
+			pdflow_cudalib)
+ENDIF (BUILD_RT_VISUALIZATION)		
 
 			
 # Set optimized building:
