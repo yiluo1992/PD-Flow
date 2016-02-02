@@ -28,11 +28,64 @@ bool  fileExists(const std::string& path)
     return 0 == access(path.c_str(), 0x00 ); // 0x00 = Check for existence only!
 }
 
+
+void colormap(cv::Vec3b & color, double nivel)
+{
+        if (nivel >= 1 )
+        {
+            color.val[0] = 0;
+            color.val[1] = 0;
+            color.val[2] = 255;
+        }
+        else if (nivel >= 0.5 )
+        {
+            nivel = 2*(nivel - 0.5);
+            color.val[0] = 0;
+            color.val[1] = 255*(1-nivel);
+            color.val[2] = 255;
+        }
+        else if (nivel > 0 )
+        {
+            nivel = 2*nivel;
+            color.val[0] = 0;
+            color.val[1] = 255;
+            color.val[2] = 255*nivel;
+        }
+        else if (nivel == 0 )
+        {
+            color.val[0] = 0;
+            color.val[1] = 255;
+            color.val[2] = 0;
+        }
+        else if (nivel >= -0.5 )
+        {
+            nivel = 2*(nivel + 0.5);
+            color.val[0] = 255*(1-nivel);
+            color.val[1] = 255;
+            color.val[2] = 0;
+        }
+        else if (nivel >= -1 )
+        {
+            nivel = 2*(nivel + 1);
+            color.val[0] = 255;
+            color.val[1] = 255*nivel;
+            color.val[2] = 0;
+        }
+        else
+        {
+            color.val[0] = 255;
+            color.val[1] = 0;
+            color.val[2] = 0;
+        }
+}
+
+
+
 PD_flow_opencv::PD_flow_opencv(unsigned int rows_config)
 {     
     rows = rows_config;      //Maximum size of the coarse-to-fine scheme - Default 240 (QVGA)
     cols = rows*320/240;
-    ctf_levels = static_cast<unsigned int>(log2(float(rows/15))) + 1;
+    ctf_levels = static_cast<unsigned int>(log2(float(rows/15))) + 1; //Coarsest is 15*15
     fovh = M_PI*62.5f/180.f;
     fovv = M_PI*48.5f/180.f;
 
@@ -58,6 +111,11 @@ PD_flow_opencv::PD_flow_opencv(unsigned int rows_config)
 	dyp = (float *) malloc(sizeof(float)*rows*cols);
 	dzp = (float *) malloc(sizeof(float)*rows*cols);
 
+    //Reserve memory for the optical flow and range flow
+	dup = (float *) malloc(sizeof(float)*rows*cols);
+	dvp = (float *) malloc(sizeof(float)*rows*cols);
+	dwp = (float *) malloc(sizeof(float)*rows*cols);
+
     //Parameters of the variational method
     lambda_i = 0.04f;
     lambda_d = 0.35f;
@@ -67,12 +125,13 @@ PD_flow_opencv::PD_flow_opencv(unsigned int rows_config)
 void PD_flow_opencv::createImagePyramidGPU()
 {
     //Copy new frames to the scene flow object
+    //And Push new frames to old frames
     csf_host.copyNewFrames(I, Z);
 
     //Copy scene flow object to device
     csf_device = ObjectToDevice(&csf_host);
 
-    unsigned int pyr_levels = static_cast<unsigned int>(log2(float(width/cols))) + ctf_levels;
+    unsigned int pyr_levels = static_cast<unsigned int>(log2(float(width/cols))) + ctf_levels; // width=640, ctf_levels=5, cam_mode=1
     GaussianPyramidBridge(csf_device, pyr_levels, cam_mode);
 
     //Copy scene flow object back to host
@@ -90,8 +149,8 @@ void PD_flow_opencv::solveSceneFlowGPU()
     for (unsigned int i=0; i<ctf_levels; i++)
     {
         s = static_cast<unsigned int>(pow(2.f,int(ctf_levels-(i+1))));
-        cols_i = cols/s;
-        rows_i = rows/s;
+        cols_i = cols/s; //Start from 20
+        rows_i = rows/s; //Start from 15
         level_image = ctf_levels - i + static_cast<unsigned int>(log2(float(width/cols))) - 1;
 
         //=========================================================================
@@ -144,6 +203,10 @@ void PD_flow_opencv::solveSceneFlowGPU()
 
         //Copy motion field to CPU
 		csf_host.copyMotionField(dxp, dyp, dzp);
+ 
+        //Copy optical flow and range flow to CPU
+		csf_host.copyFlow(dup, dvp, dwp);
+
 
 		//For debugging
         //DebugBridge(csf_device);
@@ -268,6 +331,19 @@ bool PD_flow_opencv::loadRGBDFrames()
 		for (unsigned int u=0; u<width; u++)
 			Z[v + u*height] = depth_float.at<float>(v,u);
 
+
+    //Calculate and save the init IDiff
+    cv::Mat IDiff(intensity1.rows, intensity1.cols, CV_8U);
+    for(int i = 0; i < intensity1.rows; i++)
+    {
+        for(int j = 0; j < intensity1.cols; j++)
+        {
+            IDiff.at<uchar>(i,j) = abs(intensity1.at<uchar>(i,j) - intensity2.at<uchar>(i,j));
+
+        }
+    }
+    cv::imwrite("./initIDiff.png", IDiff);
+
 	createImagePyramidGPU();
 
 	return 1;
@@ -277,6 +353,15 @@ void PD_flow_opencv::showAndSaveResults()
 {
 	//Save scene flow as an RGB image (one colour per direction)
 	cv::Mat sf_image(rows, cols, CV_8UC3);
+
+    //Save scene flow per direction
+	// cv::Mat sf_x_image(rows, cols, CV_8U);
+	// cv::Mat sf_y_image(rows, cols, CV_8U);
+	// cv::Mat sf_z_image(rows, cols, CV_8U);
+
+    cv::Mat sf_x_image(rows, cols, CV_8UC3);
+    cv::Mat sf_y_image(rows, cols, CV_8UC3);
+    cv::Mat sf_z_image(rows, cols, CV_8UC3);
 
     //Compute the max values of the flow (of its components)
 	float maxmodx = 0.f, maxmody = 0.f, maxmodz = 0.f;
@@ -298,6 +383,22 @@ void PD_flow_opencv::showAndSaveResults()
             sf_image.at<cv::Vec3b>(v,u)[0] = static_cast<unsigned char>(255.f*fabs(dxp[v + u*rows])/maxmodx); //Blue - x
             sf_image.at<cv::Vec3b>(v,u)[1] = static_cast<unsigned char>(255.f*fabs(dyp[v + u*rows])/maxmody); //Green - y
             sf_image.at<cv::Vec3b>(v,u)[2] = static_cast<unsigned char>(255.f*fabs(dzp[v + u*rows])/maxmodz); //Red - z
+
+            // sf_x_image.at<uchar>(v,u) = static_cast<unsigned char>(255.f*fabs(dxp[v + u*rows])/maxmodx);
+            // sf_y_image.at<uchar>(v,u) = static_cast<unsigned char>(255.f*fabs(dyp[v + u*rows])/maxmody);
+            // sf_z_image.at<uchar>(v,u) = static_cast<unsigned char>(255.f*fabs(dzp[v + u*rows])/maxmodz);
+
+            double nivel_x = dxp[v + u*rows]/maxmodx; //x
+            double nivel_y = dyp[v + u*rows]/maxmody; //y
+            double nivel_z = dzp[v + u*rows]/maxmodz; //z
+
+            cv::Vec3b& temp_x = sf_x_image.at<cv::Vec3b>(v,u);
+            cv::Vec3b& temp_y = sf_y_image.at<cv::Vec3b>(v,u);
+            cv::Vec3b& temp_z = sf_z_image.at<cv::Vec3b>(v,u);
+
+            colormap(temp_x, nivel_x);
+            colormap(temp_y, nivel_y);
+            colormap(temp_z, nivel_z);
 		}
 	
 	//Show the scene flow as an RGB image	
@@ -327,11 +428,14 @@ void PD_flow_opencv::showAndSaveResults()
 	for (unsigned int v=0; v<rows; v++)
 		for (unsigned int u=0; u<cols; u++)
 		{
-			f_res << v << " ";
-			f_res << u << " ";
+			// f_res << v << " ";
+			// f_res << u << " ";
 			f_res << dxp[v + u*rows] << " ";
 			f_res << dyp[v + u*rows] << " ";
-			f_res << dzp[v + u*rows] << std::endl;
+			f_res << dwp[v + u*rows] << " ";
+			f_res << dup[v + u*rows] << " ";
+			f_res << dvp[v + u*rows] << " ";
+			f_res << dwp[v + u*rows] << std::endl;
 		}
 
 	f_res.close();
@@ -340,4 +444,9 @@ void PD_flow_opencv::showAndSaveResults()
 	sprintf(name, "pdflow_representation%02u.png", nFichero);
 	printf("Saving the visual representation to file: %s \n", name);
 	cv::imwrite(name, sf_image);
+
+
+	cv::imwrite("./sceneflow_x.png", sf_x_image);
+	cv::imwrite("./sceneflow_y.png", sf_y_image);
+	cv::imwrite("./sceneflow_z.png", sf_z_image);
 }

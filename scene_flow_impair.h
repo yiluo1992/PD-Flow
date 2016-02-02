@@ -28,6 +28,7 @@
 #elif __linux
     #include <opencv2/core/core.hpp>
     #include <opencv2/highgui/highgui.hpp>
+    #include <opencv2/imgproc/imgproc.hpp>
 	#include <unistd.h>
 #endif
 
@@ -71,6 +72,10 @@ public:
 
     //Motion field
 	float *dxp, *dyp, *dzp;
+
+    //Optical flow and range flow
+	float *dup, *dvp, *dwp;
+
 
     //Camera properties
     float fovh;     //In radians

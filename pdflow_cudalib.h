@@ -62,13 +62,14 @@ public:
 
     //Images and coordinates (pointers to pointers...)
     float *depth_old_dev[8], *xx_old_dev[8], *yy_old_dev[8];
-    float *depth_dev[8], *xx_dev[8], *yy_dev[8];
+    float *depth_dev[8], *xx_dev[8], *yy_dev[8]; //Depth[level], X coordinates of the Point[level][index]
     float *colour_old_dev[8], *colour_dev[8];
 
     //Motion field
     float *dx_dev, *dy_dev, *dz_dev;
 
     //Intensity and depth gradients without warping
+    //Row gradients: gradients between rows
     float *dcu_aux_dev, *dcv_aux_dev;
     float *ddu_aux_dev, *ddv_aux_dev;
 
@@ -132,6 +133,7 @@ public:
     __host__ void freeLevelVariables();
 	__host__ void copyAllSolutions(float *dx, float *dy, float *dz, float *depth, float *depth_old, float *colour, float *colour_old, float *xx, float *xx_old, float *yy, float *yy_old);
 	__host__ void copyMotionField(float *dx, float *dy, float *dz);
+	__host__ void copyFlow(float *du, float *dv, float *dw);
 
     __device__ void computePyramidLevel(unsigned int index, unsigned int level);
     __device__ void assignZeros(unsigned int index);

@@ -243,6 +243,15 @@ __host__ void CSF_cuda::copyMotionField(float *dx, float *dy, float *dz)
     cudaMemcpy(dz, dz_dev, rows_i*cols_i*sizeof(float), cudaMemcpyDeviceToHost);
 }
 
+__host__ void CSF_cuda::copyFlow(float *du, float *dv, float *dw)
+{
+    printf("Copying FLow\n");
+    cudaMemcpy(du, du_l_dev, rows_i*cols_i*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(dv, dv_l_dev, rows_i*cols_i*sizeof(float), cudaMemcpyDeviceToHost);
+    cudaMemcpy(dw, dw_l_dev, rows_i*cols_i*sizeof(float), cudaMemcpyDeviceToHost);
+}
+
+
 
 //                              Free memory - device
 //=============================================================================
@@ -350,13 +359,15 @@ __device__ void CSF_cuda::computePyramidLevel(unsigned int index, unsigned int l
 
     //                              Downsampling
     //-----------------------------------------------------------------------------
+    //3*3 weighted median filter
+    //Pixels are weighted in local histogram
     else
     {
         float sumd = 0.f, sumc = 0.f, acu_weights_d = 0.f, acu_weights_c = 0.f;
 		const unsigned int ind_cent_prev = 2*v + 4*u*rows_i;
 		const float dcenter = depth_dev[level-1][ind_cent_prev];
 		
-		//Inner pixels
+  		//Inner pixels
         if ((v>0)&&(v<rows_i-1)&&(u>0)&&(u<cols_i-1))
         {	
 			for (int k=-2; k<3; k++)
@@ -624,6 +635,8 @@ __device__ void CSF_cuda::computeImGradients(unsigned int index)
 
 __device__ void CSF_cuda::performWarping(unsigned int index)
 {
+    //Warp the gradients images
+
     //Calculate (v,u)
     const unsigned int v = index%rows_i;
     const unsigned int u = index/rows_i;
@@ -1261,7 +1274,8 @@ __global__ void DebugKernel(CSF_cuda *csf)
     //Add here the code you want to use for debugging
 	printf("\n dx: ");
     for (unsigned int i = 0; i< (csf->rows_i)*(csf->cols_i); i++)
-        printf(" %f", csf->dx_dev[i]);
+        //printf(" %f", csf->dx_dev[i]);
+        printf(" %f", csf->du_l_dev[i]);
 
 }
 
