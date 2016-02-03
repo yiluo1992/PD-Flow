@@ -201,7 +201,7 @@ void PD_flow_mrpt::solveSceneFlowGPU()
                         xx[level_image].data(), xx_old[level_image].data(), yy[level_image].data(), yy_old[level_image].data());
 
 		//For debugging
-        DebugBridge(csf_device);
+        //DebugBridge(csf_device);
 
         //=========================================================================
         //                              Cuda - end
@@ -389,9 +389,13 @@ void PD_flow_mrpt::initializeScene()
 
 void PD_flow_mrpt::updateScene()
 {	
-	scene = window.get3DSceneAndLock();
+
+    printf("%d\n", colour_wf.getColCount());
+	
+    scene = window.get3DSceneAndLock();
 
 	const unsigned int repr_level = round(log2(colour_wf.getColCount()/cols));
+
 
 	//Point cloud (final)
     opengl::CPointCloudPtr fpoints_gl = scene->getByClass<opengl::CPointCloud>(0);
@@ -439,10 +443,12 @@ bool PD_flow_mrpt::loadRGBDFrames()
 {
     char name[100];
     cv::Mat depth_float;
-    float* I = colour_wf.data();
-    float* Z = depth_wf.data();
+    float* I = (float*)colour_wf.data();
+    float* Z = (float*)depth_wf.data();
 
     printf("Loading...\n");
+    height = 240*2;
+    width = 320*2;
 
     //First intensity image
     sprintf(name, "i1.png");
@@ -455,7 +461,10 @@ bool PD_flow_mrpt::loadRGBDFrames()
 
     for (unsigned int u=0; u<width; u++)
         for (unsigned int v=0; v<height; v++)
+        {
             I[v + u*height] = float(intensity1.at<unsigned char>(v,u));
+            // printf("%f ", I[v + u*height]);
+        }
 
     //First depth image
     sprintf(name, "z1.png");
