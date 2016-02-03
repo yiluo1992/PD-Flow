@@ -392,7 +392,7 @@ void PD_flow_mrpt::initializeScene()
 void PD_flow_mrpt::updateScene()
 {	
 
-    printf("%d\n", colour_wf.getColCount());
+    //printf("%d\n", colour_wf.getColCount());
 	
     scene = window.get3DSceneAndLock();
 
@@ -405,14 +405,14 @@ void PD_flow_mrpt::updateScene()
     for (unsigned int v=0; v<rows; v++)
         for (unsigned int u=0; u<cols; u++)
             if (depth[repr_level](v,u) > 0.1f)
-                fpoints_gl->insertPoint(depth[repr_level](v,u), xx[repr_level](v,u), yy[repr_level](v,u));
-                // fpoints_gl->insertPoint(xx[repr_level](v,u), yy[repr_level](v,u), depth[repr_level](v,u)) ;
+                //fpoints_gl->insertPoint(depth[repr_level](v,u), xx[repr_level](v,u), yy[repr_level](v,u));
+                fpoints_gl->insertPoint(xx[repr_level](v,u), yy[repr_level](v,u), depth[repr_level](v,u)) ;
 
 
     //Scene flow
 	opengl::CVectorField3DPtr sf = scene->getByClass<opengl::CVectorField3D>(0);
-	sf->setPointCoordinates(depth_old[repr_level], xx_old[repr_level], yy_old[repr_level]);
-	// sf->setPointCoordinates(xx_old[repr_level], yy_old[repr_level], depth_old[repr_level]);
+	//sf->setPointCoordinates(depth_old[repr_level], xx_old[repr_level], yy_old[repr_level]);
+	sf->setPointCoordinates(xx_old[repr_level], yy_old[repr_level], depth_old[repr_level]);
     sf->setVectorField(dx[0], dy[0], dz[0]);
 
     window.unlockAccess3DScene();
@@ -446,91 +446,91 @@ void PD_flow_mrpt::initializePDFlow()
 
 bool PD_flow_mrpt::loadRGBDFrames()
 {
-/*     char name[100]; */
-    // cv::Mat depth_float;
-    // float* I = (float*)colour_wf.data();
-    // float* Z = (float*)depth_wf.data();
+    char name[100]; 
+    cv::Mat depth_float;
+    float* I = (float*)colour_wf.data();
+    float* Z = (float*)depth_wf.data();
 
-    // printf("Loading...\n");
-    // height = 240*2;
-    // width = 320*2;
+    printf("Loading...\n");
+    height = 240*2;
+    width = 320*2;
 
-    // //First intensity image
-    // sprintf(name, "i1.png");
-    // intensity1 = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
-    // if (intensity1.empty())
-    // {
-        // printf("\nThe first intensity image (i1) cannot be found, please check that it is in the correct folder \n");
-        // return 0;
-    // }
+    //First intensity image
+    sprintf(name, "i1.png");
+    intensity1 = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+    if (intensity1.empty())
+    {
+        printf("\nThe first intensity image (i1) cannot be found, please check that it is in the correct folder \n");
+        return 0;
+    }
 
-    // for (unsigned int u=0; u<width; u++)
-        // for (unsigned int v=0; v<height; v++)
-        // {
-            // I[v + u*height] = float(intensity1.at<unsigned char>(v,u));
-            // // printf("%f ", I[v + u*height]);
-        // }
+    for (unsigned int u=0; u<width; u++)
+        for (unsigned int v=0; v<height; v++)
+        {
+            I[v + u*height] = float(intensity1.at<unsigned char>(v,u));
+            // printf("%f ", I[v + u*height]);
+        }
 
-    // //First depth image
-    // sprintf(name, "z1.png");
-    // depth1 = cv::imread(name, -1);
-    // if (depth1.empty())
-    // {
-        // printf("\nThe first depth image (z1) cannot be found, please check that it is in the correct folder \n");
-        // return 0;
-    // }
+    //First depth image
+    sprintf(name, "z1.png");
+    depth1 = cv::imread(name, -1);
+    if (depth1.empty())
+    {
+        printf("\nThe first depth image (z1) cannot be found, please check that it is in the correct folder \n");
+        return 0;
+    }
 
-    // depth1.convertTo(depth_float, CV_32FC1, 1.0 / 5000.0);
-    // for (unsigned int v=0; v<height; v++)
-        // for (unsigned int u=0; u<width; u++)
-            // Z[v + u*height] = depth_float.at<float>(v,u);
+    depth1.convertTo(depth_float, CV_32FC1, 1.0 / 5000.0);
+    for (unsigned int v=0; v<height; v++)
+        for (unsigned int u=0; u<width; u++)
+            Z[v + u*height] = depth_float.at<float>(v,u);
 
-    // createImagePyramidGPU();
-
-
-    // //Second intensity image
-    // sprintf(name, "i2.png");
-    // intensity2 = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
-    // if (intensity2.empty())
-    // {
-        // printf("\nThe second intensity image (i2) cannot be found, please check that it is in the correct folder \n");
-        // return 0;
-    // }
-
-    // for (unsigned int v=0; v<height; v++)
-        // for (unsigned int u=0; u<width; u++)
-            // I[v + u*height] = float(intensity2.at<unsigned char>(v,u));
-
-    // //Second depth image
-    // sprintf(name, "z2.png");
-    // depth2 = cv::imread(name, -1);
-    // if (depth2.empty())
-    // {
-        // printf("\nThe second depth image (z2) cannot be found, please check that they are in the correct folder \n");
-        // return 0;
-    // }
-    // depth2.convertTo(depth_float, CV_32FC1, 1.0 / 5000.0);
-    // for (unsigned int v=0; v<height; v++)
-        // for (unsigned int u=0; u<width; u++)
-            // Z[v + u*height] = depth_float.at<float>(v,u);
+    createImagePyramidGPU();
 
 
-    // //Calculate and save the init IDiff
-    // cv::Mat IDiff(intensity1.rows, intensity1.cols, CV_8U);
-    // for(int i = 0; i < intensity1.rows; i++)
-    // {
-        // for(int j = 0; j < intensity1.cols; j++)
-        // {
-            // IDiff.at<uchar>(i,j) = abs(intensity1.at<uchar>(i,j) - intensity2.at<uchar>(i,j));
+    //Second intensity image
+    sprintf(name, "i2.png");
+    intensity2 = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+    if (intensity2.empty())
+    {
+        printf("\nThe second intensity image (i2) cannot be found, please check that it is in the correct folder \n");
+        return 0;
+    }
 
-        // }
-    // }
-    // cv::imwrite("./initIDiff.png", IDiff);
+    for (unsigned int v=0; v<height; v++)
+        for (unsigned int u=0; u<width; u++)
+            I[v + u*height] = float(intensity2.at<unsigned char>(v,u));
 
-    // createImagePyramidGPU();
+    //Second depth image
+    sprintf(name, "z2.png");
+    depth2 = cv::imread(name, -1);
+    if (depth2.empty())
+    {
+        printf("\nThe second depth image (z2) cannot be found, please check that they are in the correct folder \n");
+        return 0;
+    }
+    depth2.convertTo(depth_float, CV_32FC1, 1.0 / 5000.0);
+    for (unsigned int v=0; v<height; v++)
+        for (unsigned int u=0; u<width; u++)
+            Z[v + u*height] = depth_float.at<float>(v,u);
 
-    // return 1;
-// }
+
+    //Calculate and save the init IDiff
+    cv::Mat IDiff(intensity1.rows, intensity1.cols, CV_8U);
+    for(int i = 0; i < intensity1.rows; i++)
+    {
+        for(int j = 0; j < intensity1.cols; j++)
+        {
+            IDiff.at<uchar>(i,j) = abs(intensity1.at<uchar>(i,j) - intensity2.at<uchar>(i,j));
+
+        }
+    }
+    cv::imwrite("./initIDiff.png", IDiff);
+
+    createImagePyramidGPU();
+
+    return 1;
+}
 
 // void PD_flow_mrpt::showAndSaveResults()
 // {
@@ -638,4 +638,4 @@ bool PD_flow_mrpt::loadRGBDFrames()
 	// cv::imwrite("./sceneflow_x.png", sf_x_image);
 	// cv::imwrite("./sceneflow_y.png", sf_y_image);
 	/* cv::imwrite("./sceneflow_z.png", sf_z_image); */
-}
+//}

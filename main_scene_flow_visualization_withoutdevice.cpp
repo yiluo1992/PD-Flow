@@ -97,9 +97,8 @@ int main(int num_arg, char *argv[])
             //sceneflow.CaptureFrame();
             clock.Tic();
             sceneflow.loadRGBDFrames();
-            //sceneflow.createImagePyramidGPU();
             sceneflow.solveSceneFlowGPU();
-            cout << endl << "PD-Flow runtime: " << 1000.f*clock.Tac();
+            cout << endl << "PD-Flow runtime: " << 1000.f*clock.Tac() << endl;
 
             sceneflow.updateScene();
             break;
