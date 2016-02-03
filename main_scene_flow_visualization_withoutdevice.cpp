@@ -21,7 +21,7 @@
 **																			**
 *****************************************************************************/
 
-#include "scene_flow_visualization.h"
+#include "scene_flow_visualization_withoutdevice.h"
 
 
 // ------------------------------------------------------
@@ -33,7 +33,7 @@ int main(int num_arg, char *argv[])
 	//==============================================================================
 	//						Read function arguments
 	//==============================================================================
-	unsigned int cam_mode = 1, fps = 30, rows = 240;	//Default values
+	unsigned int cam_mode = 2, fps = 30, rows = 240;	//Default values
 
 	if (num_arg <= 1); //No arguments
 	else if ( string(argv[1]) == "--help")
@@ -64,6 +64,8 @@ int main(int num_arg, char *argv[])
 		}
 	}
 
+    printf("Initializing...\n");
+
 	//Initialize the scene flow object and visualization
 	PD_flow_mrpt sceneflow(cam_mode, fps, rows);
 	sceneflow.initializePDFlow();
@@ -72,10 +74,10 @@ int main(int num_arg, char *argv[])
     //									Main operation
     //==============================================================================
 
-	int pushed_key = 0;
+    int pushed_key = 0;
     int stop = 0;
     bool working = false;
-	CTicTac	clock;
+    CTicTac	clock;
 
     while (!stop)
     {
@@ -90,19 +92,19 @@ int main(int num_arg, char *argv[])
 			
         //Capture new frame
         case  'n':
-            sceneflow.CaptureFrame();
+            //sceneflow.CaptureFrame();
             clock.Tic();
-            sceneflow.createImagePyramidGPU();
-            sceneflow.solveSceneFlowGPU();
+            //sceneflow.createImagePyramidGPU();
+            //sceneflow.solveSceneFlowGPU();
             cout << endl << "PD-Flow runtime: " << 1000.f*clock.Tac();
 
-			sceneflow.updateScene();
+            sceneflow.updateScene();
             break;
 
         //Start/Stop continuous estimation
         case 's':
             working = !working;
-			clock.Tic();
+            clock.Tic();
             break;
 
         //Close the program
@@ -114,24 +116,27 @@ int main(int num_arg, char *argv[])
         if (working == 1)
         {
             while(clock.Tac() < 1.f/sceneflow.fps);
-			const float exec_time = clock.Tac();
-			clock.Tic();
+            const float exec_time = clock.Tac();
+            clock.Tic();
             if (exec_time > 1.05f/sceneflow.fps)
-				printf("\n Not enough time to compute the scene flow at %d Hz", int(sceneflow.fps));
+                printf("\n Not enough time to compute the scene flow at %d Hz", int(sceneflow.fps));
 
             sceneflow.CaptureFrame();
             clock.Tic();
             sceneflow.createImagePyramidGPU();
             sceneflow.solveSceneFlowGPU();
-			const float total_time = 1000.f*clock.Tac();
+            const float total_time = 1000.f*clock.Tac();
             cout << endl << "PD-Flow runtime (ms): " << total_time;
 			
-			sceneflow.updateScene();
+            sceneflow.updateScene();
         }
     }
 
     sceneflow.freeGPUMemory();
-    sceneflow.CloseCamera();
+
+    printf("End\n");
+
+    // sceneflow.CloseCamera();
 	return 0;
 
 }

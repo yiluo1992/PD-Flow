@@ -13,7 +13,7 @@ set(CUDA_NVCC_FLAGS "-arch=sm_20")
 CUDA_ADD_LIBRARY(pdflow_cudalib pdflow_cudalib.h pdflow_cudalib.cu)
 
 
-SET(DEFAULT_BUILD_EVALUATOR ON)
+SET(DEFAULT_BUILD_EVALUATOR OFF)
 SET(BUILD_EVALUATOR ${DEFAULT_BUILD_EVALUATOR} CACHE BOOL "Build the scene flow evaluator for a RGB-D frame pair that uses OpenCV")
 
 #Build the scene flow evaluator
@@ -31,7 +31,7 @@ IF (BUILD_EVALUATOR)
 			pdflow_cudalib)		
 ENDIF (BUILD_EVALUATOR)
 
-SET(DEFAULT_BUILD_RT_VISUALIZATION ON)
+SET(DEFAULT_BUILD_RT_VISUALIZATION OFF)
 SET(BUILD_RT_VISUALIZATION ${DEFAULT_BUILD_RT_VISUALIZATION} CACHE BOOL "Build the scene flow estimator with real-time visualization that requires MRPT and OpenNI2")
 
 #Build real-time scene flow with visualization
@@ -64,9 +64,12 @@ IF (BUILD_RT_VISUALIZATION)
 			pdflow_cudalib)
 ENDIF (BUILD_RT_VISUALIZATION)		
 
+SET(DEFAULT_BUILD_RT_VISUALIZATION_WITHOUTDEVICE ON)
+SET(BUILD_RT_VISUALIZATION_WITHOUTDEVICE ${DEFAULT_BUILD_RT_VISUALIZATION_WITHOUTDEVICE} CACHE BOOL "Build the scene flow estimator with real-time visualization that requires MRPT and OpenNI2")
 #Build real-time scene flow with visualization
-IF (BUILD_RT_VISUALIZATION)
+IF (BUILD_RT_VISUALIZATION_WITHOUTDEVICE)
 	FIND_PACKAGE(MRPT REQUIRED base gui opengl)
+        FIND_PACKAGE(OpenCV REQUIRED)
 
 	IF (WIN32)
 		INCLUDE_DIRECTORIES($ENV{OPENNI2_INCLUDE})
@@ -83,16 +86,17 @@ IF (BUILD_RT_VISUALIZATION)
 
 	ADD_EXECUTABLE(Scene-Flow-Visualization-withoutdevice  
 		main_scene_flow_visualization_withoutdevice.cpp
-		scene_flow_visualization.cpp
-		scene_flow_visualization.h
+		scene_flow_visualization_withoutdevice.cpp
+		scene_flow_visualization_withoutdevice.h
 		legend_pdflow.xpm)
 		
-	TARGET_LINK_LIBRARIES(Scene-Flow-Visualization
+	TARGET_LINK_LIBRARIES(Scene-Flow-Visualization-withoutdevice  
 			${MRPT_LIBS}
 			${CUDA_LIBRARIES}
 			${OpenNI_lib}
+                        ${OpenCV_LIBS}
 			pdflow_cudalib)
-ENDIF (BUILD_RT_VISUALIZATION)		
+ENDIF (BUILD_RT_VISUALIZATION_WITHOUTDEVICE)		
 
 			
 # Set optimized building:
