@@ -33,7 +33,7 @@ int main(int num_arg, char *argv[])
 	//==============================================================================
 	//						Read function arguments
 	//==============================================================================
-	unsigned int cam_mode = 2, fps = 30, rows = 240;	//Default values
+	unsigned int cam_mode = 1, fps = 30, rows = 240;	//Default values
 
 	if (num_arg <= 1); //No arguments
 	else if ( string(argv[1]) == "--help")
@@ -69,68 +69,71 @@ int main(int num_arg, char *argv[])
 	//Initialize the scene flow object and visualization
 	PD_flow_mrpt sceneflow(cam_mode, fps, rows);
 	sceneflow.initializePDFlow();
-	
+    sceneflow.updateScene();
+
     //==============================================================================
     //									Main operation
     //==============================================================================
 
-/*     int pushed_key = 0; */
-    // int stop = 0;
-    // bool working = false;
-    // CTicTac	clock;
+    int pushed_key = 0; 
+    int stop = 0;
+    bool working = false;
+    CTicTac	clock;
 
-    // while (!stop)
-    // {
+    while (!stop)
+    {
+        // printf("Runing in the while...\n");
 
-        // if (sceneflow.window.keyHit())
-            // pushed_key = sceneflow.window.getPushedKey();
+        if (sceneflow.window.keyHit())
+            pushed_key = sceneflow.window.getPushedKey();
 
-        // else
-            // pushed_key = 0;
+        else
+            pushed_key = 0;
 		
-        // switch (pushed_key) {
+        switch (pushed_key) {
 			
-        // //Capture new frame
-        // case  'n':
-            // //sceneflow.CaptureFrame();
-            // clock.Tic();
-            // //sceneflow.createImagePyramidGPU();
-            // //sceneflow.solveSceneFlowGPU();
-            // cout << endl << "PD-Flow runtime: " << 1000.f*clock.Tac();
+        //Capture new frame
+        case  'n':
+            //sceneflow.CaptureFrame();
+            clock.Tic();
+            sceneflow.loadRGBDFrames();
+            //sceneflow.createImagePyramidGPU();
+            sceneflow.solveSceneFlowGPU();
+            cout << endl << "PD-Flow runtime: " << 1000.f*clock.Tac();
 
-            // sceneflow.updateScene();
-            // break;
+            sceneflow.updateScene();
+            break;
 
-        // //Start/Stop continuous estimation
-        // case 's':
-            // working = !working;
-            // clock.Tic();
-            // break;
+        //Start/Stop continuous estimation
+        case 's':
+            working = !working;
+            clock.Tic();
+            break;
 
-        // //Close the program
-        // case 'e':
-            // stop = 1;
-            // break;
-        // }
+        //Close the program
+        case 'e':
+            stop = 1;
+            break;
+        }
 
-        // if (working == 1)
-        // {
-            // while(clock.Tac() < 1.f/sceneflow.fps);
-            // const float exec_time = clock.Tac();
-            // clock.Tic();
-            // if (exec_time > 1.05f/sceneflow.fps)
-                // printf("\n Not enough time to compute the scene flow at %d Hz", int(sceneflow.fps));
+        if (working == 1)
+        {
+            while(clock.Tac() < 1.f/sceneflow.fps);
+            const float exec_time = clock.Tac();
+            clock.Tic();
+            if (exec_time > 1.05f/sceneflow.fps)
+                printf("\n Not enough time to compute the scene flow at %d Hz", int(sceneflow.fps));
 
-            // sceneflow.CaptureFrame();
-            // clock.Tic();
-            // sceneflow.createImagePyramidGPU();
-            // sceneflow.solveSceneFlowGPU();
-            // const float total_time = 1000.f*clock.Tac();
-            // cout << endl << "PD-Flow runtime (ms): " << total_time;
+            sceneflow.CaptureFrame();
+            clock.Tic();
+            sceneflow.createImagePyramidGPU();
+            sceneflow.solveSceneFlowGPU();
+            const float total_time = 1000.f*clock.Tac();
+            cout << endl << "PD-Flow runtime (ms): " << total_time;
 			
-            // sceneflow.updateScene();
-        // }
-    /* } */
+            sceneflow.updateScene();
+        }
+    } 
 
     sceneflow.freeGPUMemory();
 

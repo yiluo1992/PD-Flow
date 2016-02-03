@@ -138,9 +138,11 @@ void PD_flow_mrpt::solveSceneFlowGPU()
 
     clock.Tic();
 
+    printf("Level: ");
     //For every level (coarse-to-fine)
     for (unsigned int i=0; i<ctf_levels; i++)
     {
+        printf("%d ", i);
         const unsigned int width = colour_wf.getColCount();
         s = pow(2.f,int(ctf_levels-(i+1)));
         cols_i = cols/s;
@@ -404,11 +406,13 @@ void PD_flow_mrpt::updateScene()
         for (unsigned int u=0; u<cols; u++)
             if (depth[repr_level](v,u) > 0.1f)
                 fpoints_gl->insertPoint(depth[repr_level](v,u), xx[repr_level](v,u), yy[repr_level](v,u));
+                // fpoints_gl->insertPoint(xx[repr_level](v,u), yy[repr_level](v,u), depth[repr_level](v,u)) ;
 
 
     //Scene flow
 	opengl::CVectorField3DPtr sf = scene->getByClass<opengl::CVectorField3D>(0);
 	sf->setPointCoordinates(depth_old[repr_level], xx_old[repr_level], yy_old[repr_level]);
+	// sf->setPointCoordinates(xx_old[repr_level], yy_old[repr_level], depth_old[repr_level]);
     sf->setVectorField(dx[0], dy[0], dz[0]);
 
     window.unlockAccess3DScene();
@@ -437,93 +441,201 @@ void PD_flow_mrpt::initializePDFlow()
     loadRGBDFrames();
     printf("Back to initializePDFlow..\n");
     solveSceneFlowGPU();
+    printf("Func initializePDFlow End..\n");
 }
 
 bool PD_flow_mrpt::loadRGBDFrames()
 {
-    char name[100];
-    cv::Mat depth_float;
-    float* I = (float*)colour_wf.data();
-    float* Z = (float*)depth_wf.data();
+/*     char name[100]; */
+    // cv::Mat depth_float;
+    // float* I = (float*)colour_wf.data();
+    // float* Z = (float*)depth_wf.data();
 
-    printf("Loading...\n");
-    height = 240*2;
-    width = 320*2;
+    // printf("Loading...\n");
+    // height = 240*2;
+    // width = 320*2;
 
-    //First intensity image
-    sprintf(name, "i1.png");
-    intensity1 = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
-    if (intensity1.empty())
-    {
-        printf("\nThe first intensity image (i1) cannot be found, please check that it is in the correct folder \n");
-        return 0;
-    }
+    // //First intensity image
+    // sprintf(name, "i1.png");
+    // intensity1 = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+    // if (intensity1.empty())
+    // {
+        // printf("\nThe first intensity image (i1) cannot be found, please check that it is in the correct folder \n");
+        // return 0;
+    // }
 
-    for (unsigned int u=0; u<width; u++)
-        for (unsigned int v=0; v<height; v++)
-        {
-            I[v + u*height] = float(intensity1.at<unsigned char>(v,u));
-            // printf("%f ", I[v + u*height]);
-        }
+    // for (unsigned int u=0; u<width; u++)
+        // for (unsigned int v=0; v<height; v++)
+        // {
+            // I[v + u*height] = float(intensity1.at<unsigned char>(v,u));
+            // // printf("%f ", I[v + u*height]);
+        // }
 
-    //First depth image
-    sprintf(name, "z1.png");
-    depth1 = cv::imread(name, -1);
-    if (depth1.empty())
-    {
-        printf("\nThe first depth image (z1) cannot be found, please check that it is in the correct folder \n");
-        return 0;
-    }
+    // //First depth image
+    // sprintf(name, "z1.png");
+    // depth1 = cv::imread(name, -1);
+    // if (depth1.empty())
+    // {
+        // printf("\nThe first depth image (z1) cannot be found, please check that it is in the correct folder \n");
+        // return 0;
+    // }
 
-    depth1.convertTo(depth_float, CV_32FC1, 1.0 / 5000.0);
-    for (unsigned int v=0; v<height; v++)
-        for (unsigned int u=0; u<width; u++)
-            Z[v + u*height] = depth_float.at<float>(v,u);
+    // depth1.convertTo(depth_float, CV_32FC1, 1.0 / 5000.0);
+    // for (unsigned int v=0; v<height; v++)
+        // for (unsigned int u=0; u<width; u++)
+            // Z[v + u*height] = depth_float.at<float>(v,u);
 
-    createImagePyramidGPU();
-
-
-    //Second intensity image
-    sprintf(name, "i2.png");
-    intensity2 = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
-    if (intensity2.empty())
-    {
-        printf("\nThe second intensity image (i2) cannot be found, please check that it is in the correct folder \n");
-        return 0;
-    }
-
-    for (unsigned int v=0; v<height; v++)
-        for (unsigned int u=0; u<width; u++)
-            I[v + u*height] = float(intensity2.at<unsigned char>(v,u));
-
-    //Second depth image
-    sprintf(name, "z2.png");
-    depth2 = cv::imread(name, -1);
-    if (depth2.empty())
-    {
-        printf("\nThe second depth image (z2) cannot be found, please check that they are in the correct folder \n");
-        return 0;
-    }
-    depth2.convertTo(depth_float, CV_32FC1, 1.0 / 5000.0);
-    for (unsigned int v=0; v<height; v++)
-        for (unsigned int u=0; u<width; u++)
-            Z[v + u*height] = depth_float.at<float>(v,u);
+    // createImagePyramidGPU();
 
 
-    //Calculate and save the init IDiff
-    cv::Mat IDiff(intensity1.rows, intensity1.cols, CV_8U);
-    for(int i = 0; i < intensity1.rows; i++)
-    {
-        for(int j = 0; j < intensity1.cols; j++)
-        {
-            IDiff.at<uchar>(i,j) = abs(intensity1.at<uchar>(i,j) - intensity2.at<uchar>(i,j));
+    // //Second intensity image
+    // sprintf(name, "i2.png");
+    // intensity2 = cv::imread(name, CV_LOAD_IMAGE_GRAYSCALE);
+    // if (intensity2.empty())
+    // {
+        // printf("\nThe second intensity image (i2) cannot be found, please check that it is in the correct folder \n");
+        // return 0;
+    // }
 
-        }
-    }
-    cv::imwrite("./initIDiff.png", IDiff);
+    // for (unsigned int v=0; v<height; v++)
+        // for (unsigned int u=0; u<width; u++)
+            // I[v + u*height] = float(intensity2.at<unsigned char>(v,u));
 
-    createImagePyramidGPU();
+    // //Second depth image
+    // sprintf(name, "z2.png");
+    // depth2 = cv::imread(name, -1);
+    // if (depth2.empty())
+    // {
+        // printf("\nThe second depth image (z2) cannot be found, please check that they are in the correct folder \n");
+        // return 0;
+    // }
+    // depth2.convertTo(depth_float, CV_32FC1, 1.0 / 5000.0);
+    // for (unsigned int v=0; v<height; v++)
+        // for (unsigned int u=0; u<width; u++)
+            // Z[v + u*height] = depth_float.at<float>(v,u);
 
-    return 1;
+
+    // //Calculate and save the init IDiff
+    // cv::Mat IDiff(intensity1.rows, intensity1.cols, CV_8U);
+    // for(int i = 0; i < intensity1.rows; i++)
+    // {
+        // for(int j = 0; j < intensity1.cols; j++)
+        // {
+            // IDiff.at<uchar>(i,j) = abs(intensity1.at<uchar>(i,j) - intensity2.at<uchar>(i,j));
+
+        // }
+    // }
+    // cv::imwrite("./initIDiff.png", IDiff);
+
+    // createImagePyramidGPU();
+
+    // return 1;
+// }
+
+// void PD_flow_mrpt::showAndSaveResults()
+// {
+
+	// const unsigned int repr_level = round(log2(colour_wf.getColCount()/cols));
+    // float* dxp = dx[repr_level].data(); 
+    // float* dyp = dy[repr_level].data(); 
+    // float* dzp = dz[repr_level].data(); 
+
+	// //Save scene flow as an RGB image (one colour per direction)
+	// cv::Mat sf_image(rows, cols, CV_8UC3);
+
+    // //Save scene flow per direction
+	// // cv::Mat sf_x_image(rows, cols, CV_8U);
+	// // cv::Mat sf_y_image(rows, cols, CV_8U);
+	// // cv::Mat sf_z_image(rows, cols, CV_8U);
+
+    // cv::Mat sf_x_image(rows, cols, CV_8UC3);
+    // cv::Mat sf_y_image(rows, cols, CV_8UC3);
+    // cv::Mat sf_z_image(rows, cols, CV_8UC3);
+
+    // //Compute the max values of the flow (of its components)
+	// float maxmodx = 0.f, maxmody = 0.f, maxmodz = 0.f;
+	// for (unsigned int v=0; v<rows; v++)
+		// for (unsigned int u=0; u<cols; u++)
+		// {
+            // if (fabs(dxp[v + u*rows]) > maxmodx)
+                // maxmodx = fabs(dxp[v + u*rows]);
+            // if (fabs(dyp[v + u*rows]) > maxmody)
+                // maxmody = fabs(dyp[v + u*rows]);
+            // if (fabs(dzp[v + u*rows]) > maxmodz)
+                // maxmodz = fabs(dzp[v + u*rows]);
+		// }
+
+	// //Create an RGB representation of the scene flow estimate: 
+	// for (unsigned int v=0; v<rows; v++)
+		// for (unsigned int u=0; u<cols; u++)
+		// {
+            // sf_image.at<cv::Vec3b>(v,u)[0] = static_cast<unsigned char>(255.f*fabs(dxp[v + u*rows])/maxmodx); //Blue - x
+            // sf_image.at<cv::Vec3b>(v,u)[1] = static_cast<unsigned char>(255.f*fabs(dyp[v + u*rows])/maxmody); //Green - y
+            // sf_image.at<cv::Vec3b>(v,u)[2] = static_cast<unsigned char>(255.f*fabs(dzp[v + u*rows])/maxmodz); //Red - z
+
+            // // sf_x_image.at<uchar>(v,u) = static_cast<unsigned char>(255.f*fabs(dxp[v + u*rows])/maxmodx);
+            // // sf_y_image.at<uchar>(v,u) = static_cast<unsigned char>(255.f*fabs(dyp[v + u*rows])/maxmody);
+            // // sf_z_image.at<uchar>(v,u) = static_cast<unsigned char>(255.f*fabs(dzp[v + u*rows])/maxmodz);
+
+            // double nivel_x = dxp[v + u*rows]/maxmodx; //x
+            // double nivel_y = dyp[v + u*rows]/maxmody; //y
+            // double nivel_z = dzp[v + u*rows]/maxmodz; //z
+
+            // cv::Vec3b& temp_x = sf_x_image.at<cv::Vec3b>(v,u);
+            // cv::Vec3b& temp_y = sf_y_image.at<cv::Vec3b>(v,u);
+            // cv::Vec3b& temp_z = sf_z_image.at<cv::Vec3b>(v,u);
+
+            // colormap(temp_x, nivel_x);
+            // colormap(temp_y, nivel_y);
+            // colormap(temp_z, nivel_z);
+		// }
+	
+	// //Show the scene flow as an RGB image	
+	// cv::namedWindow("SceneFlow", cv::WINDOW_NORMAL);
+    // cv::moveWindow("SceneFlow",width - cols/2,height - rows/2);
+	// cv::imshow("SceneFlow", sf_image);
+	// cv::waitKey(100000);
+
+
+	// //Save the scene flow as a text file 
+	// char	name[100];
+	// int     nFichero = 0;
+	// bool    free_name = false;
+
+	// while (!free_name)
+	// {
+		// nFichero++;
+		// sprintf(name, "pdflow_results%02u.txt", nFichero );
+		// free_name = !fileExists(name);
+	// }
+	
+	// std::ofstream f_res;
+	// f_res.open(name);
+	// printf("Saving the estimated scene flow to file: %s \n", name);
+
+	// //Format: (pixel(row), pixel(col), vx, vy, vz)
+	// for (unsigned int v=0; v<rows; v++)
+		// for (unsigned int u=0; u<cols; u++)
+		// {
+			// // f_res << v << " ";
+			// // f_res << u << " ";
+			// f_res << dxp[v + u*rows] << " ";
+			// f_res << dyp[v + u*rows] << " ";
+			// f_res << dwp[v + u*rows] << " ";
+			// f_res << dup[v + u*rows] << " ";
+			// f_res << dvp[v + u*rows] << " ";
+			// f_res << dwp[v + u*rows] << std::endl;
+		// }
+
+	// f_res.close();
+
+	// //Save the RGB representation of the scene flow
+	// sprintf(name, "pdflow_representation%02u.png", nFichero);
+	// printf("Saving the visual representation to file: %s \n", name);
+	// cv::imwrite(name, sf_image);
+
+
+	// cv::imwrite("./sceneflow_x.png", sf_x_image);
+	// cv::imwrite("./sceneflow_y.png", sf_y_image);
+	/* cv::imwrite("./sceneflow_z.png", sf_z_image); */
 }
-

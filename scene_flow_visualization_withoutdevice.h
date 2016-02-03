@@ -130,7 +130,8 @@ public:
 	void updateScene();
 	void initializePDFlow();
     bool loadRGBDFrames();
-
+	void showAndSaveResults();
+    
     PD_flow_mrpt(unsigned int cam_mode_config, unsigned int fps_config, unsigned int rows_config);
 };
 

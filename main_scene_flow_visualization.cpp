@@ -67,7 +67,6 @@ int main(int num_arg, char *argv[])
 	//Initialize the scene flow object and visualization
 	PD_flow_mrpt sceneflow(cam_mode, fps, rows);
 	sceneflow.initializePDFlow();
-	
     //==============================================================================
     //									Main operation
     //==============================================================================
