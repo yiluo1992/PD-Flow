@@ -13,7 +13,7 @@ set(CUDA_NVCC_FLAGS "-arch=sm_20")
 CUDA_ADD_LIBRARY(pdflow_cudalib pdflow_cudalib.h pdflow_cudalib.cu)
 
 
-SET(DEFAULT_BUILD_EVALUATOR OFF)
+SET(DEFAULT_BUILD_EVALUATOR ON)
 SET(BUILD_EVALUATOR ${DEFAULT_BUILD_EVALUATOR} CACHE BOOL "Build the scene flow evaluator for a RGB-D frame pair that uses OpenCV")
 
 #Build the scene flow evaluator
