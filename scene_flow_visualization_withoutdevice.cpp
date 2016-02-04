@@ -406,13 +406,22 @@ void PD_flow_mrpt::updateScene()
         for (unsigned int u=0; u<cols; u++)
             if (depth[repr_level](v,u) > 0.1f)
                 fpoints_gl->insertPoint(depth[repr_level](v,u), xx[repr_level](v,u), yy[repr_level](v,u));
+<<<<<<< HEAD
                 // fpoints_gl->insertPoint(xx[repr_level](v,u), yy[repr_level](v,u), depth[repr_level](v,u)) ;
+=======
+                //fpoints_gl->insertPoint(xx[repr_level](v,u), yy[repr_level](v,u), depth[repr_level](v,u)) ;
+>>>>>>> 1853d8193b52d9bc1262455746080c4a1222c005
 
 
     //Scene flow
 	opengl::CVectorField3DPtr sf = scene->getByClass<opengl::CVectorField3D>(0);
+<<<<<<< HEAD
     sf->setPointCoordinates(depth_old[repr_level], xx_old[repr_level], yy_old[repr_level]);
 	// sf->setPointCoordinates(xx_old[repr_level], yy_old[repr_level], depth_old[repr_level]);
+=======
+	sf->setPointCoordinates(depth_old[repr_level], xx_old[repr_level], yy_old[repr_level]);
+	//sf->setPointCoordinates(xx_old[repr_level], yy_old[repr_level], depth_old[repr_level]);
+>>>>>>> 1853d8193b52d9bc1262455746080c4a1222c005
     sf->setVectorField(dx[0], dy[0], dz[0]);
 
     window.unlockAccess3DScene();
